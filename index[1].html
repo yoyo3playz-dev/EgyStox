@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EgyStox — Egyptian Market Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===================== TOP BAR ===================== -->
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__mark" aria-hidden="true">𓋹</span>
+      <div>
+        <h1 class="topbar__title">EgyStox<span class="trademark">™</span></h1>
+        <p class="topbar__legal">EgyStox is not a brokerage. Prices are for informational use only. Not financial advice.</p>
+      </div>
+    </div>
+
+    <div class="topbar__status">
+      <div class="status-pill" id="marketStatusPill">
+        <span class="status-dot" id="marketStatusDot"></span>
+        <span class="status-text" id="marketStatusText">Checking market hours…</span>
+      </div>
+      <div class="status-pill" id="connectionStatus">
+        <span class="status-dot"></span>
+        <span class="status-text" id="refreshLabel">Live · refreshing every 0.5s</span>
+      </div>
+      <div class="topbar__clock" id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- ===================== DATA SOURCE STRIP ===================== -->
+  <div class="source-strip">
+    <span>Stocks &amp; companies: <strong>Thndr</strong> (EGX)</span>
+    <span class="source-strip__dot">·</span>
+    <span>Gold &amp; Silver: <strong>iSagha</strong> (El Sagha market)</span>
+    <span class="source-strip__dot">·</span>
+    <span>FX: Central Bank of Egypt reference</span>
+    <span class="source-strip__dot">·</span>
+    <span id="dataModeLabel" class="source-strip__mode">Simulated — no live keys connected</span>
+  </div>
+
+  <!-- ===================== SECTION NAV ===================== -->
+  <nav class="view-nav" id="viewNav" aria-label="Dashboard sections">
+    <button type="button" class="view-nav__btn" data-target="overviewSection">Overview</button>
+    <button type="button" class="view-nav__btn" data-target="goldPanel">Gold</button>
+    <button type="button" class="view-nav__btn" data-target="silverPanel">Silver</button>
+    <button type="button" class="view-nav__btn" data-target="stocksSection">Stocks</button>
+    <button type="button" class="view-nav__btn" data-target="recommendedSection">Recommended</button>
+  </nav>
+
+  <!-- ===================== TICKER TAPE ===================== -->
+  <div class="ticker" aria-label="Top movers ticker">
+    <div class="ticker__track" id="tickerTrack"></div>
+  </div>
+
+  <main class="dashboard">
+
+    <!-- ===================== SUMMARY CARDS ===================== -->
+    <section class="summary-grid" id="overviewSection" aria-label="Market summary">
+
+      <article class="card card--metal card--clickable" id="goldCard" data-metal="gold" tabindex="0">
+        <div class="card__eyebrow-row">
+          <span class="card__eyebrow">Gold</span>
+          <div class="karat-tabs" id="karatTabs">
+            <!-- populated by app.js -->
+          </div>
+        </div>
+        <div class="card__value"><span id="goldEgpGram">--</span> <span class="card__unit">EGP/g</span></div>
+        <div class="card__meta">
+          <span id="goldKaratLabel">24K</span>
+          <span class="delta" id="goldDelta">+0.00%</span>
+        </div>
+      </article>
+
+      <article class="card card--metal card--clickable" id="silverCard" data-metal="silver" tabindex="0">
+        <div class="card__eyebrow">Silver · 999</div>
+        <div class="card__value"><span id="silverEgpGram">--</span> <span class="card__unit">EGP/g</span></div>
+        <div class="card__meta">
+          <span>Tap for live chart</span>
+          <span class="delta" id="silverDelta">+0.00%</span>
+        </div>
+      </article>
+
+      <article class="card card--fx" id="fxCard">
+        <div class="card__eyebrow">USD / EGP</div>
+        <div class="card__value"><span id="usdEgp">--</span> <span class="card__unit">EGP</span></div>
+        <div class="card__meta">
+          <span>Interbank reference</span>
+          <span class="delta" id="fxDelta">+0.00%</span>
+        </div>
+      </article>
+
+      <article class="card card--portfolio" id="portfolioCard">
+        <div class="card__eyebrow">Top 50 Aggregate Value</div>
+        <div class="card__value"><span id="portfolioValue">--</span> <span class="card__unit">EGP</span></div>
+        <div class="card__meta">
+          <span id="portfolioCount">50 constituents</span>
+          <span class="delta" id="portfolioDelta">+0.00%</span>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- ===================== CHARTS ===================== -->
+    <section class="charts-grid" aria-label="Live charts">
+      <div class="panel chart-card">
+        <div class="panel__header">
+          <h2>Top 50 Aggregate Value</h2>
+          <span class="panel__hint">EGP · live</span>
+        </div>
+        <div class="panel__chart"><canvas id="portfolioChart"></canvas></div>
+      </div>
+
+      <div class="panel chart-card" id="goldPanel">
+        <div class="panel__header">
+          <h2>Gold <span id="goldChartKarat">24K</span></h2>
+          <span class="panel__hint">EGP per gram</span>
+        </div>
+        <div class="panel__chart"><canvas id="goldChart"></canvas></div>
+      </div>
+
+      <div class="panel chart-card" id="silverPanel">
+        <div class="panel__header">
+          <h2>Silver</h2>
+          <span class="panel__hint">EGP per gram</span>
+        </div>
+        <div class="panel__chart"><canvas id="silverChart"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ===================== STOCKS TABLE ===================== -->
+    <section class="panel table-panel" id="stocksSection" aria-label="Top 50 Egyptian stocks">
+      <div class="panel__header">
+        <h2>EGX Top 50 · by Market Cap</h2>
+        <div class="table-tools">
+          <input type="search" id="stockSearch" placeholder="Search symbol or name…" />
+          <span class="panel__hint hide-on-mobile">Click a row for details</span>
+          <span class="panel__hint" id="lastUpdated">Last updated --</span>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th class="col-rank">Rank</th>
+              <th class="col-symbol">Symbol</th>
+              <th class="col-name">Company</th>
+              <th class="col-tag">Signal</th>
+              <th class="col-price">Price (EGP)</th>
+              <th class="col-change">Change</th>
+              <th class="col-cap">Market Cap (EGP)</th>
+            </tr>
+          </thead>
+          <tbody id="stockTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================== RECOMMENDED / HIGH-INCOME SCREENER ===================== -->
+    <section class="panel screener-panel" id="recommendedSection" aria-label="Recommended stocks screener">
+      <div class="panel__header">
+        <h2>Recommended High-Income Stocks</h2>
+        <span class="panel__hint" id="screenerUpdated">Signals refreshed --</span>
+      </div>
+
+      <p class="screener-intro">
+        A curated list of stocks currently tagged RECOMMENDED — estimated at least 60% "safe"
+        (stability score) and in a continuous upward trend, with government/corporate contract
+        exposure and momentum as supporting signals. This is a speculative research tool, not a
+        prediction.
+      </p>
+
+      <div class="table-scroll screener-scroll">
+        <table class="stock-table screener-table">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-symbol">Symbol</th>
+              <th class="col-name">Company</th>
+              <th class="col-note">Note</th>
+              <th class="col-deal">Contract Exposure</th>
+              <th class="col-momentum">Momentum</th>
+              <th class="col-score">Opportunity Score</th>
+            </tr>
+          </thead>
+          <tbody id="screenerTableBody"></tbody>
+        </table>
+      </div>
+
+      <p class="screener-disclaimer">
+        Contract-exposure data is a placeholder pending a real procurement/contracts data feed.
+        Momentum is derived from simulated price history. No score here is a forecast or a
+        guarantee. <strong>TRADE AT YOUR OWN RISK.</strong>
+      </p>
+    </section>
+
+  </main>
+
+  <!-- ===================== FOOTER / DISCLAIMER ===================== -->
+  <footer class="footer">
+    <p>Data is for educational use only, not for live trading. Stock, gold, and silver prices are
+      simulated placeholders shaped to match Thndr and iSagha's data — connect real API credentials
+      in app.js to go live. <strong>TRADE AT YOUR OWN RISK.</strong></p>
+    <p class="footer__legal">EgyStox provides market data and price tracking for informational
+      purposes only. EgyStox is not a brokerage and does not execute trades or provide personalized
+      investment advice. All data may be delayed or inaccurate. Users should verify information
+      independently and consult a licensed financial professional before making investment decisions.</p>
+  </footer>
+
+  <!-- ===================== STOCK DETAIL MODAL ===================== -->
+  <div class="modal-backdrop" id="stockModalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalSymbol">
+      <button class="modal__close" id="stockModalClose" aria-label="Close">✕</button>
+
+      <div class="modal__header">
+        <div class="modal__id">
+          <span class="modal__symbol" id="modalSymbol">--</span>
+          <span class="modal__name" id="modalName">--</span>
+          <span class="signal-tag" id="modalSignalTag">--</span>
+        </div>
+        <div class="modal__price-block">
+          <span class="modal__price" id="modalPrice">--</span>
+          <span class="delta" id="modalDelta">+0.00%</span>
+        </div>
+      </div>
+
+      <div class="modal__chart-panel">
+        <div class="modal__chart-header">
+          <span class="panel__hint">Live · simulated OHLC · updates every 0.5s</span>
+          <span class="panel__hint" id="modalLastCandle">--</span>
+        </div>
+        <canvas id="modalCandleChart" class="candle-canvas"></canvas>
+      </div>
+
+      <div class="modal__grid">
+        <div class="modal__section">
+          <h3>Risk &amp; stability</h3>
+          <div class="risk-grid">
+            <div class="risk-stat">
+              <span class="risk-stat__label">Volatility</span>
+              <span class="risk-stat__value" id="riskVolatility">--</span>
+            </div>
+            <div class="risk-stat">
+              <span class="risk-stat__label">Beta vs EGX30</span>
+              <span class="risk-stat__value" id="riskBeta">--</span>
+            </div>
+            <div class="risk-stat">
+              <span class="risk-stat__label">Risk level</span>
+              <span class="risk-stat__value" id="riskLevel">--</span>
+            </div>
+          </div>
+          <div class="stability-gauge">
+            <div class="stability-gauge__track"><div class="stability-gauge__fill" id="stabilityFill"></div></div>
+            <div class="stability-gauge__labels"><span>Stability score</span><span id="stabilityScore">--</span></div>
+          </div>
+        </div>
+
+        <div class="modal__section">
+          <h3>Valuation &amp; signals</h3>
+          <dl class="company-facts">
+            <dt>P/E ratio</dt><dd id="statPE">--</dd>
+            <dt>Contract exposure</dt><dd id="statDeal">--</dd>
+            <dt>Est. weekly range</dt><dd id="statExpectedRange">--</dd>
+          </dl>
+          <p class="company-note">Est. weekly range is a statistical band from simulated historical
+            volatility — a model estimate, not a promised return. TRADE AT YOUR OWN RISK.</p>
+        </div>
+
+        <div class="modal__section modal__section--wide">
+          <h3>Company</h3>
+          <dl class="company-facts" id="companyFacts"></dl>
+          <p class="company-note">Founder, ownership and sector data are placeholders — connect a company-profile API to populate this section with real data.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== METAL DETAIL MODAL ===================== -->
+  <div class="modal-backdrop" id="metalModalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="metalModalTitle">
+      <button class="modal__close" id="metalModalClose" aria-label="Close">✕</button>
+
+      <div class="modal__header">
+        <div class="modal__id">
+          <span class="modal__symbol" id="metalModalTitle">Gold</span>
+          <span class="modal__name" id="metalModalSubtitle">Live per-gram price, EGP</span>
+        </div>
+        <div class="modal__price-block">
+          <span class="modal__price" id="metalModalPrice">--</span>
+          <span class="delta" id="metalModalDelta">+0.00%</span>
+        </div>
+      </div>
+
+      <div class="karat-tabs karat-tabs--modal" id="metalModalKaratTabs"></div>
+
+      <div class="modal__chart-panel">
+        <div class="modal__chart-header">
+          <span class="panel__hint">Live · simulated OHLC · updates every 0.5s</span>
+          <span class="panel__hint" id="metalModalLastCandle">--</span>
+        </div>
+        <canvas id="metalModalCandleChart" class="candle-canvas"></canvas>
+      </div>
+
+      <p class="company-note">iSagha does not publish a public API — this chart is a realistic
+        simulation until real credentials are connected. See fetchGoldKaratPrices() in app.js.</p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
